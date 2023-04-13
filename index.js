@@ -2,16 +2,16 @@ require('dotenv/config');
 const { Client, IntentsBitField} = require('discord.js');
 const { Configuration, OpenAIApi } = require('openai');
 
-const bot = new Client ({
+const client = new Client ({
     intents: [
         IntentsBitField.Flags.Guilds,
         IntentsBitField.Flags.GuildMessages,
         IntentsBitField.Flags.MessageContent,
-    ]
+    ],
 });
 
-bot.on('ready', () => {
-    console.log("Bot online");
+client.on('ready', (T) => {
+    console.log(` ${T.user.tag} is online`);
 });
 
 const config = new Configuration({
@@ -20,9 +20,40 @@ const config = new Configuration({
 const openai = new OpenAIApi(config);
 
 
-bot.on('messageCreate', (message) => {
-    if (message.author.bot || (message.channel.id !== process.allowedNodeEnvironmentFlags.CHANNEL_ID)) return;
+client.on('messageCreate', async (message) => {
+    if ((message.author.bot) || (message.channel.id !== process.env.CHANNEL_ID) || (message.content.startsWith('*'))) {
+        console.log("Message is Bot / Other Channel / Preceded with '*' ");
+        return; 
+    }
     
+    let conversationLog = [{ role: 'system', content: "You are a friendly chatbot named Marbles."}];
+
+    await message.channel.sendTyping();
+
+    let prevMessages = await message.channel.messages.fetch({ limit: 15 });
+    prevMessages.reverse();
+
+    prevMessages.forEach((msg) => {
+        if ((msg.author.id !== client.user.id && message.author.bot) || (msg.author.id !== message.author.id) || (msg.content.startsWith('*'))) {
+            console.log("Message is other Bot / Other user / Preceded with '*' ");
+            return; 
+        }
+
+        conversationLog.push({
+            role: 'user',
+            content: msg.content,
+        });
+    })
+
+    
+    const result = await openai.createChatCompletion({
+        model: 'gpt-3.5-turbo',
+        messages: conversationLog,
+    })
+
+    const response = result.data.choices[0].message.slice(0,2000);
+
+    message.reply(response);
 });
 
-bot.login(process.env.TOKEN);
+client.login(process.env.TOKEN);
