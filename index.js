@@ -5,6 +5,7 @@ const { Configuration, OpenAIApi } = require('openai');
 const client = new Client ({
     intents: [
         IntentsBitField.Flags.Guilds,
+        IntentsBitField.Flags.GuildMembers,
         IntentsBitField.Flags.GuildMessages,
         IntentsBitField.Flags.MessageContent,
     ],
@@ -19,43 +20,78 @@ const config = new Configuration({
 })
 const openai = new OpenAIApi(config);
 
-
+const msgLengthLimit = 2000;
 client.on('messageCreate', async (message) => {
-    if ((message.author.bot) || (message.channel.id !== process.env.CHANNEL_ID) || (message.content.startsWith('*'))) {
-        console.log("Message is Bot / Other Channel / Preceded with '*' ");
-        return; 
-    }
-    
-    let conversationLog = [{ role: 'system', content: "You are a friendly chatbot named Marbles."}];
-
-    await message.channel.sendTyping();
-
-    let prevMessages = await message.channel.messages.fetch({ limit: 15 });
-    prevMessages.reverse();
-
-    prevMessages.forEach((msg) => {
-        if ((msg.author.id !== client.user.id && message.author.bot) || (msg.author.id !== message.author.id) || (msg.content.startsWith('*'))) {
-            console.log("Message is other Bot / Other user / Preceded with '*' ");
-            ++i;
+    try {
+      if (message.author.bot) return;
+      if (message.channel.id !== process.env.CHANNEL_ID) return;
+      if (message.content.startsWith('!')) return;
+  
+      await message.channel.sendTyping();
+  
+      if (message.content.length > msgLengthLimit) {
+        message.reply("yeah I'm not reading all that");
+        return;
+      }
+  
+      let prevMessages = await message.channel.messages.fetch({ limit: 15 });
+      prevMessages.reverse();
+  
+      let conversationLog = [{ role: 'system', content: 'You are a friendly chatbot.' }];
+  
+      prevMessages.forEach((msg) => {
+        if (msg.content.startsWith('!')) return;
+        if (msg.content.length > msgLengthLimit) return;
+        if (msg.author.id !== client.user.id && message.author.bot) return;
+  
+        // If msg is from the bot (client) itself
+        if (msg.author.id === client.user.id) {
+          conversationLog.push({
+            role: 'assistant',
+            content: msg.content,
+          });
         }
-
-        conversationLog.push({
+  
+        // If msg is from a regular user
+        else {
+          if (msg.author.id !== message.author.id) return;
+  
+          conversationLog.push({
             role: 'user',
             content: msg.content,
-        });
-    })
-
-    
-    const result = await openai.createChatCompletion({
+          });
+        }
+      });
+  
+      const res = await openai.createChatCompletion({
         model: 'gpt-3.5-turbo',
         messages: conversationLog,
-    })
-
-    const response = result.data.choices[0].message;
-    result.data.choices[0].message = [result.data.choices[0].message];
-    result.data.choices[0].message.splice(0, 1);
-
-    message.reply(response);
+      });
+  
+      let reply = res.data.choices[0].message?.content;
+  
+      if (reply?.length > 2000) {
+        // If the reply length is over 2000 characters, send a txt file.
+        const buffer = Buffer.from(reply, 'utf8');
+        const txtFile = new AttachmentBuilder(buffer, { name: `${message.author.tag}_response.txt` });
+  
+        message.reply({ files: [txtFile] }).catch(() => {
+          message.channel.send({ content: `${message.author}`, files: [txtFile] });
+        });
+      } else {
+        message.reply(reply).catch(() => {
+          message.channel.send(`${message.author} ${reply}`);
+        });
+      }
+    } catch (error) {
+      message.reply(`Something went wrong. Try again later.`).then((msg) => {
+        setTimeout(async () => {
+          await msg.delete().catch(() => null);
+        }, 5000);
+      });
+  
+      console.log(`Error: ${error}`);
+    }
 });
 
 client.login(process.env.TOKEN);
