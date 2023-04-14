@@ -35,10 +35,8 @@ client.on('messageCreate', async (message) => {
 
     prevMessages.forEach((msg) => {
         if ((msg.author.id !== client.user.id && message.author.bot) || (msg.author.id !== message.author.id) || (msg.content.startsWith('*'))) {
-            let i = 0;
-            console.log("Message is other Bot / Other user / Preceded with '*' ", [i]);
+            console.log("Message is other Bot / Other user / Preceded with '*' ");
             ++i;
-            return; 
         }
 
         conversationLog.push({
