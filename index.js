@@ -35,7 +35,9 @@ client.on('messageCreate', async (message) => {
 
     prevMessages.forEach((msg) => {
         if ((msg.author.id !== client.user.id && message.author.bot) || (msg.author.id !== message.author.id) || (msg.content.startsWith('*'))) {
-            console.log("Message is other Bot / Other user / Preceded with '*' ");
+            let i = 0;
+            console.log("Message is other Bot / Other user / Preceded with '*' ", [i]);
+            ++i;
             return; 
         }
 
@@ -51,7 +53,9 @@ client.on('messageCreate', async (message) => {
         messages: conversationLog,
     })
 
-    const response = result.data.choices[0].message.slice(0,2000);
+    const response = result.data.choices[0].message;
+    result.data.choices[0].message = [result.data.choices[0].message];
+    result.data.choices[0].message.splice(0, 1);
 
     message.reply(response);
 });
