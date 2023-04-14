@@ -11,7 +11,7 @@ const client = new Client ({
 });
 
 client.on('ready', (T) => {
-    console.log(` ${T.user.tag} is online`);
+    console.log(` ${T.user.tag.split('#')[0]} is online`);
 });
 
 const config = new Configuration({
