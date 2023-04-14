@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  discordgpt:
+    container_name: discordgpt
+    build:
+      context: .
+    environment:
+      TOKEN: ${TOKEN}
+      API_KEY: ${API_KEY}
+      CHANNEL_ID: ${CHANNEL_ID}
+    volumes:
+      - .:/app
+    restart: unless-stopped
