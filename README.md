@@ -28,14 +28,6 @@ To make a Discord bot and add it to your server, you can follow these steps:
    * only permision to send messages is necessary
 8. Open the generated URL in a web browser and select the server where you want to add your bot. Click on the `Authorize` button to add the bot to your server.
 
-
-
-
-
-
-
-
-
 ## Installation
 
 1. Clone this repository to your local machine:
@@ -54,13 +46,30 @@ To make a Discord bot and add it to your server, you can follow these steps:
    ```bash
    nano .env
    ```
-4. Run the Docker container using Docker Compose:
+4. Review and run the Docker container using Docker Compose:
+```yml
+version: '3.8'
+
+services:
+  discordgpt:
+    container_name: discordgpt
+    build:
+      context: .
+    environment:
+      TOKEN: ${TOKEN}
+      API_KEY: ${API_KEY}
+      CHANNEL_ID: ${CHANNEL_ID}
+    volumes:
+      - .:/app
+    restart: unless-stopped   
+```
+   
    ```bash
    docker compose up -d
    ```
    
-##Contributing
+## Contributing
 If you find any bugs or issues with the bot, feel free to open an issue in this repository. Pull requests are also welcome.
 
-##License
+## License
 This project is licensed under the MIT License
