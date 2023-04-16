@@ -21,28 +21,24 @@ const config = new Configuration({
 const openai = new OpenAIApi(config);
 
 const msgLengthLimit = 2000;
+
 client.on('messageCreate', async (message) => {
     try {
-      if (message.author.bot) return;
+      if (message.author.id === client.user.id) return;
       if (message.channel.id !== process.env.CHANNEL_ID) return;
       if (message.content.startsWith('!')) return;
   
       await message.channel.sendTyping();
   
-      if (message.content.length > msgLengthLimit) {
-        message.reply("yeah I'm not reading all that");
-        return;
-      }
-  
       let prevMessages = await message.channel.messages.fetch({ limit: 15 });
       prevMessages.reverse();
   
-      let conversationLog = [{ role: 'system', content: 'You are a friendly chatbot.' }];
+      let conversationLog = [{ role: 'system', content: 'You are a friendly and conversational chatbot.' }];
   
       prevMessages.forEach((msg) => {
         if (msg.content.startsWith('!')) return;
         if (msg.content.length > msgLengthLimit) return;
-        if (msg.author.id !== client.user.id && message.author.bot) return;
+        //if (msg.author.id !== client.user.id && message.author.bot) return;
   
         // If msg is from the bot (client) itself
         if (msg.author.id === client.user.id) {
@@ -70,7 +66,7 @@ client.on('messageCreate', async (message) => {
   
       let reply = res.data.choices[0].message?.content;
   
-      if (reply?.length > 2000) {
+      if (reply?.length > msgLengthLimit) {
         // If the reply length is over 2000 characters, send a txt file.
         const buffer = Buffer.from(reply, 'utf8');
         const txtFile = new AttachmentBuilder(buffer, { name: `${message.author.tag}_response.txt` });
@@ -83,6 +79,7 @@ client.on('messageCreate', async (message) => {
           message.channel.send(`${message.author} ${reply}`);
         });
       }
+      
     } catch (error) {
       message.reply(`Something went wrong. Try again later.`).then((msg) => {
         setTimeout(async () => {
