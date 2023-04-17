@@ -38,7 +38,7 @@ client.on('messageCreate', async (message) => {
       prevMessages.forEach((msg) => {
         if (msg.content.startsWith('!')) return;
         if (msg.content.length > msgLengthLimit) return;
-        //if (msg.author.id !== client.user.id && message.author.bot) return;
+        if (msg.author.id !== client.user.id && message.author.bot && (msg.author.id !== process.env.BOT_ID)) return;
   
         // If msg is from the bot (client) itself
         if (msg.author.id === client.user.id) {
